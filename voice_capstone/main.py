@@ -387,7 +387,8 @@ async def process_standalone_voice_consult(
             return {
                 "answer": "I couldn't hear you clearly. Could you please repeat that?",
                 "transcript": "",
-                "audio_base64": None
+                "audio_base64": None,
+                "session_id": temp_session
             }
             
         # 3. Context gathering

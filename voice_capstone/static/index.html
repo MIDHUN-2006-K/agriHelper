@@ -1,791 +1,819 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgriAssist - Farm Voice Assistant</title>
-    <style>
-      :root {
-        --bg: #f6fbf2;
-        --panel: #ffffff;
-        --muted: #5f6f52;
-        --text: #1f2937;
-        --brand: #2f7a33;
-        --brand-soft: #e9f7e9;
-        --warn: #b45309;
-        --high: #b91c1c;
-        --critical: #7f1d1d;
-        --border: #d8e7d6;
-        --shadow: 0 12px 28px rgba(31, 41, 55, 0.08);
-      }
 
-      * {
-        box-sizing: border-box;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriAssist - Farm Voice Assistant</title>
+  <style>
+    :root {
+      --bg: #f6fbf2;
+      --panel: #ffffff;
+      --muted: #5f6f52;
+      --text: #1f2937;
+      --brand: #2f7a33;
+      --brand-soft: #e9f7e9;
+      --warn: #b45309;
+      --high: #b91c1c;
+      --critical: #7f1d1d;
+      --border: #d8e7d6;
+      --shadow: 0 12px 28px rgba(31, 41, 55, 0.08);
+    }
 
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        Inter,
+        Segoe UI,
+        Arial,
+        sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, #e8f5e6, transparent 45%),
+        radial-gradient(circle at 90% 0%, #edf9ec, transparent 45%), var(--bg);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+      background: #f8fdf8;
+    }
+
+    .tab {
+      border: none;
+      background: transparent;
+      padding: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .tab.active {
+      background: var(--brand-soft);
+      color: var(--brand);
+      border-bottom: 3px solid var(--brand);
+    }
+
+    .header {
+      padding: 22px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #ffffff 0%, #f3fbf2 100%);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      margin: 8px 0 6px;
+      color: var(--muted);
+    }
+
+    .disclaimer {
+      margin: 0;
+      font-size: 13px;
+      color: #4b5563;
+    }
+
+    .session {
+      margin-top: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .btn.primary {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f8fdf8;
+      color: #36513a;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+
+    .view {
+      display: none;
+      padding: 20px;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .banner {
+      border: 1px solid #cce7ca;
+      background: #f3fbf2;
+      color: #2f5f34;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+
+    .messages {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      min-height: 280px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 12px;
+      background: #fcfffb;
+    }
+
+    .msg {
+      margin: 10px 0;
+      display: flex;
+    }
+
+    .msg.user {
+      justify-content: flex-end;
+    }
+
+    .bubble {
+      max-width: 78%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      line-height: 1.4;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .msg.user .bubble {
+      background: #edf8ed;
+      border-color: #c9e4c6;
+    }
+
+    .risk {
+      margin: 12px 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .risk .level {
+      display: inline-block;
+      margin-bottom: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .risk .level.LOW {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .risk .level.MODERATE {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .risk .level.HIGH {
+      background: #fee2e2;
+      color: var(--high);
+    }
+
+    .risk .level.CRITICAL {
+      background: var(--critical);
+      color: #fff;
+    }
+
+    .tip {
+      margin-top: 10px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .input {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .mic {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .mic.recording {
+      background: #fee2e2;
+      border-color: #fecaca;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 14px;
+    }
+
+    .loading {
+      display: none;
+      margin-top: 8px;
+      color: #475569;
+      font-size: 13px;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .footer {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 50;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .card {
+      width: min(900px, 100%);
+      max-height: 85vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 18px;
+    }
+
+    .report-grid {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .report-box {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fcfffb;
+      font-size: 13px;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    @media (max-width: 760px) {
       body {
-        margin: 0;
-        font-family:
-          Inter,
-          Segoe UI,
-          Arial,
-          sans-serif;
-        color: var(--text);
-        background:
-          radial-gradient(circle at 20% 10%, #e8f5e6, transparent 45%),
-          radial-gradient(circle at 90% 0%, #edf9ec, transparent 45%), var(--bg);
-        min-height: 100vh;
-        padding: 24px;
-      }
-
-      .app {
-        max-width: 980px;
-        margin: 0 auto;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        box-shadow: var(--shadow);
-        overflow: hidden;
-      }
-
-      .tabs {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        border-bottom: 1px solid var(--border);
-        background: #f8fdf8;
-      }
-
-      .tab {
-        border: none;
-        background: transparent;
-        padding: 14px;
-        font-weight: 700;
-        cursor: pointer;
-        color: var(--muted);
-      }
-
-      .tab.active {
-        background: var(--brand-soft);
-        color: var(--brand);
-        border-bottom: 3px solid var(--brand);
-      }
-
-      .header {
-        padding: 22px;
-        border-bottom: 1px solid var(--border);
-        background: linear-gradient(135deg, #ffffff 0%, #f3fbf2 100%);
-      }
-
-      .row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-      }
-
-      h1 {
-        margin: 0;
-        font-size: 28px;
-      }
-
-      .subtitle {
-        margin: 8px 0 6px;
-        color: var(--muted);
-      }
-
-      .disclaimer {
-        margin: 0;
-        font-size: 13px;
-        color: #4b5563;
-      }
-
-      .session {
-        margin-top: 10px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 12px;
-        color: #4b5563;
-      }
-
-      .actions {
-        display: flex;
-        gap: 8px;
-      }
-
-      .btn {
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 8px 12px;
-        background: #fff;
-        cursor: pointer;
-        font-weight: 600;
-        color: #334155;
-      }
-
-      .btn.primary {
-        background: var(--brand);
-        border-color: var(--brand);
-        color: #fff;
-      }
-
-      .status {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-left: 8px;
-        padding: 7px 11px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: #f8fdf8;
-        color: #36513a;
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #22c55e;
-      }
-
-      .view {
-        display: none;
-        padding: 20px;
-      }
-      .view.active {
-        display: block;
-      }
-
-      .banner {
-        border: 1px solid #cce7ca;
-        background: #f3fbf2;
-        color: #2f5f34;
-        border-radius: 12px;
         padding: 12px;
-        margin-bottom: 14px;
-        font-size: 14px;
-      }
-
-      .messages {
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        min-height: 280px;
-        max-height: 420px;
-        overflow-y: auto;
-        padding: 12px;
-        background: #fcfffb;
-      }
-
-      .msg {
-        margin: 10px 0;
-        display: flex;
-      }
-      .msg.user {
-        justify-content: flex-end;
-      }
-
-      .bubble {
-        max-width: 78%;
-        padding: 10px 12px;
-        border-radius: 14px;
-        line-height: 1.4;
-        font-size: 14px;
-        border: 1px solid var(--border);
-        background: #fff;
-      }
-
-      .msg.user .bubble {
-        background: #edf8ed;
-        border-color: #c9e4c6;
-      }
-
-      .risk {
-        margin: 12px 0;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 10px;
-        background: #fff;
-        font-size: 14px;
-      }
-
-      .risk .level {
-        display: inline-block;
-        margin-bottom: 6px;
-        padding: 4px 8px;
-        border-radius: 999px;
-        font-weight: 700;
-        font-size: 12px;
-        background: #e5e7eb;
-        color: #111827;
-      }
-
-      .risk .level.LOW {
-        background: #dcfce7;
-        color: #166534;
-      }
-      .risk .level.MODERATE {
-        background: #fef3c7;
-        color: #92400e;
-      }
-      .risk .level.HIGH {
-        background: #fee2e2;
-        color: var(--high);
-      }
-      .risk .level.CRITICAL {
-        background: var(--critical);
-        color: #fff;
-      }
-
-      .tip {
-        margin-top: 10px;
-        border: 1px solid #bfdbfe;
-        background: #eff6ff;
-        color: #1e3a8a;
-        border-radius: 10px;
-        padding: 10px;
-        font-size: 14px;
       }
 
       .input {
-        display: grid;
-        grid-template-columns: 52px 1fr auto;
-        gap: 8px;
-        margin-top: 12px;
+        grid-template-columns: 48px 1fr;
       }
 
-      .mic {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: #fff;
-        cursor: pointer;
-        font-size: 20px;
-      }
-
-      .mic.recording {
-        background: #fee2e2;
-        border-color: #fecaca;
-      }
-
-      input[type="text"] {
-        width: 100%;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 11px 12px;
-        font-size: 14px;
-      }
-
-      .loading {
-        display: none;
-        margin-top: 8px;
-        color: #475569;
-        font-size: 13px;
-      }
-      .loading.active {
-        display: block;
-      }
-
-      .footer {
-        margin-top: 12px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-      }
-
-      .modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        z-index: 50;
-      }
-
-      .modal.active {
-        display: flex;
-      }
-
-      .card {
-        width: min(900px, 100%);
-        max-height: 85vh;
-        overflow: auto;
-        background: #fff;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        padding: 18px;
+      .input .btn.primary {
+        grid-column: span 2;
       }
 
       .report-grid {
-        margin-top: 14px;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .report-box {
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 10px;
-        background: #fcfffb;
-        font-size: 13px;
+        grid-template-columns: 1fr;
       }
 
       .span-3 {
-        grid-column: span 3;
+        grid-column: span 1;
       }
 
-      @media (max-width: 760px) {
-        body {
-          padding: 12px;
-        }
-        .input {
-          grid-template-columns: 48px 1fr;
-        }
-        .input .btn.primary {
-          grid-column: span 2;
-        }
-        .report-grid {
-          grid-template-columns: 1fr;
-        }
-        .span-3 {
-          grid-column: span 1;
-        }
+      .speaker {
+        margin-left: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        opacity: 0.7;
       }
-    </style>
-  </head>
-  <body>
-    <div class="app">
-      <div class="tabs">
-        <button
-          class="tab active"
-          id="tab-intake"
-          onclick="switchTab('intake')"
-        >
-          AgriAssist Assessment
-        </button>
-        <button class="tab" id="tab-consult" onclick="switchTab('consult')">
-          Farm Consult
-        </button>
-      </div>
 
-      <div class="header">
+      .speaker:hover {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="tabs">
+      <button class="tab active" id="tab-intake" onclick="switchTab('intake')">
+        AgriAssist Assessment
+      </button>
+      <button class="tab" id="tab-consult" onclick="switchTab('consult')">
+        Farm Consult
+      </button>
+    </div>
+
+    <div class="header">
+      <div class="row">
+        <h1 id="title">AgriAssist</h1>
         <div class="row">
-          <h1 id="title">AgriAssist</h1>
-          <div class="row">
-            <div class="actions">
-              <button class="btn" onclick="startSession()">New Session</button>
-              <button class="btn" onclick="viewSummaryReport()">
-                Farm Report
-              </button>
-            </div>
-            <div class="status" id="status">
-              <span class="dot"></span><span id="statusText">Ready</span>
-            </div>
+          <div class="actions">
+            <button class="btn" onclick="startSession()">New Session</button>
+            <button class="btn" onclick="viewSummaryReport()">
+              Farm Report
+            </button>
+          </div>
+          <div class="status" id="status">
+            <span class="dot"></span><span id="statusText">Ready</span>
           </div>
         </div>
-        <p class="subtitle" id="subtitle">
-          Voice-first crop issue intake and structured farm assessment.
-        </p>
-        <p class="session" id="sessionIdDisplay">No active session</p>
-        <p class="disclaimer" id="disclaimer">
-          Decision support only. For severe crop threats, contact a licensed
-          agronomist or extension specialist.
-        </p>
       </div>
-
-      <section id="view-intake" class="view active">
-        <div class="banner">
-          <strong>AgriAssist:</strong> Describe your crop concern by typing or
-          holding the mic button while speaking.
-        </div>
-        <div id="riskContainer"></div>
-        <div id="messages" class="messages"></div>
-        <div id="loading" class="loading">Processing...</div>
-
-        <div class="input">
-          <button
-            class="mic"
-            id="micBtn"
-            onmousedown="startRecording()"
-            onmouseup="stopRecording()"
-            ontouchstart="startRecording()"
-            ontouchend="stopRecording()"
-          >
-            🎙️
-          </button>
-          <input
-            type="text"
-            id="textInput"
-            placeholder="Describe your crop issue..."
-          />
-          <button class="btn primary" onclick="sendText()">Send</button>
-        </div>
-      </section>
-
-      <section id="view-consult" class="view">
-        <div class="banner">
-          <strong>Farm Consult:</strong> Ask crop, pest, soil, irrigation, and
-          field-management questions.
-        </div>
-        <div id="consultMessages" class="messages"></div>
-        <div id="consultLoading" class="loading">Processing consult...</div>
-
-        <div class="input">
-          <button
-            class="mic"
-            id="consultMicBtn"
-            onmousedown="startConsultRecording()"
-            onmouseup="stopConsultRecording()"
-            ontouchstart="startConsultRecording()"
-            ontouchend="stopConsultRecording()"
-          >
-            🎙️
-          </button>
-          <input
-            type="text"
-            id="consultInput"
-            placeholder="Ask a farm question..."
-          />
-          <button class="btn primary" onclick="sendConsult()">Ask</button>
-        </div>
-      </section>
+      <p class="subtitle" id="subtitle">
+        Voice-first crop issue intake and structured farm assessment.
+      </p>
+      <p class="session" id="sessionIdDisplay">No active session</p>
+      <p class="disclaimer" id="disclaimer">
+        Decision support only. For severe crop threats, contact a licensed
+        agronomist or extension specialist.
+      </p>
     </div>
 
-    <div class="modal" id="reportModal">
-      <div class="card">
-        <div class="row">
-          <h2>Farm Summary Report</h2>
-          <button class="btn" onclick="closeModal()">Close</button>
-        </div>
-        <div id="reportBody"></div>
-        <div class="footer">
-          <button class="btn" onclick="exportSession()">Download TXT</button>
-        </div>
+    <section id="view-intake" class="view active">
+      <div class="banner">
+        <strong>AgriAssist:</strong> Describe your crop concern by typing or
+        holding the mic button while speaking.
+      </div>
+      <div id="riskContainer"></div>
+      <div id="messages" class="messages"></div>
+      <div id="loading" class="loading">Processing...</div>
+
+      <div class="input">
+        <button class="mic" id="micBtn" onmousedown="startRecording()" onmouseup="stopRecording()"
+          ontouchstart="startRecording()" ontouchend="stopRecording()">
+          🎙️
+        </button>
+        <input type="text" id="textInput" placeholder="Describe your crop issue..." />
+        <button class="btn primary" onclick="sendText()">Send</button>
+      </div>
+    </section>
+
+    <section id="view-consult" class="view">
+      <div class="banner">
+        <strong>Farm Consult:</strong> Ask crop, pest, soil, irrigation, and
+        field-management questions.
+      </div>
+      <div id="consultMessages" class="messages"></div>
+      <div id="consultLoading" class="loading">Processing consult...</div>
+
+      <div class="input">
+        <button class="mic" id="consultMicBtn" onmousedown="startConsultRecording()" onmouseup="stopConsultRecording()"
+          ontouchstart="startConsultRecording()" ontouchend="stopConsultRecording()">
+          🎙️
+        </button>
+        <input type="text" id="consultInput" placeholder="Ask a farm question..." />
+        <button class="btn primary" onclick="sendConsult()">Ask</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="reportModal">
+    <div class="card">
+      <div class="row">
+        <h2>Farm Summary Report</h2>
+        <button class="btn" onclick="closeModal()">Close</button>
+      </div>
+      <div id="reportBody"></div>
+      <div class="footer">
+        <button class="btn" onclick="exportSession()">Download TXT</button>
       </div>
     </div>
+  </div>
 
-    <script>
-      let sessionId = null;
-      let mediaRecorder = null;
-      let audioChunks = [];
-      let isRecording = false;
+  <script>
+    let currentAudio = null;
+    let sessionId = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
 
-      let consultRecorder = null;
-      let consultChunks = [];
-      let isConsultRecording = false;
+    let consultRecorder = null;
+    let consultChunks = [];
+    let isConsultRecording = false;
 
-      const messages = document.getElementById("messages");
-      const consultMessages = document.getElementById("consultMessages");
+    const messages = document.getElementById("messages");
+    const consultMessages = document.getElementById("consultMessages");
 
-      function setStatus(text) {
-        document.getElementById("statusText").textContent = text;
+    function setStatus(text) {
+      document.getElementById("statusText").textContent = text;
+    }
+
+    function switchTab(tab) {
+      document
+        .getElementById("tab-intake")
+        .classList.toggle("active", tab === "intake");
+      document
+        .getElementById("tab-consult")
+        .classList.toggle("active", tab === "consult");
+      document
+        .getElementById("view-intake")
+        .classList.toggle("active", tab === "intake");
+      document
+        .getElementById("view-consult")
+        .classList.toggle("active", tab === "consult");
+
+      if (tab === "intake") {
+        document.getElementById("title").textContent = "AgriAssist";
+        document.getElementById("subtitle").textContent =
+          "Voice-first crop issue intake and structured farm assessment.";
+        document.getElementById("disclaimer").textContent =
+          "Decision support only. For severe crop threats, contact a licensed agronomist or extension specialist.";
+      } else {
+        document.getElementById("title").textContent = "Farm Consult";
+        document.getElementById("subtitle").textContent =
+          "General Q&A for crop, soil, irrigation, and pest management.";
+        document.getElementById("disclaimer").textContent =
+          "General guidance only; verify high-risk actions with local experts.";
       }
+    }
 
-      function switchTab(tab) {
-        document
-          .getElementById("tab-intake")
-          .classList.toggle("active", tab === "intake");
-        document
-          .getElementById("tab-consult")
-          .classList.toggle("active", tab === "consult");
-        document
-          .getElementById("view-intake")
-          .classList.toggle("active", tab === "intake");
-        document
-          .getElementById("view-consult")
-          .classList.toggle("active", tab === "consult");
+    function addMessage(role, text, consult = false, audio = null) {
 
-        if (tab === "intake") {
-          document.getElementById("title").textContent = "AgriAssist";
-          document.getElementById("subtitle").textContent =
-            "Voice-first crop issue intake and structured farm assessment.";
-          document.getElementById("disclaimer").textContent =
-            "Decision support only. For severe crop threats, contact a licensed agronomist or extension specialist.";
-        } else {
-          document.getElementById("title").textContent = "Farm Consult";
-          document.getElementById("subtitle").textContent =
-            "General Q&A for crop, soil, irrigation, and pest management.";
-          document.getElementById("disclaimer").textContent =
-            "General guidance only; verify high-risk actions with local experts.";
-        }
-      }
+      const container = consult ? consultMessages : messages
 
-      function addMessage(role, text, consult = false) {
-        const container = consult ? consultMessages : messages;
-        const msg = document.createElement("div");
-        msg.className = `msg ${role}`;
-        const bubble = document.createElement("div");
-        bubble.className = "bubble";
-        bubble.textContent = text;
-        msg.appendChild(bubble);
-        container.appendChild(msg);
-        container.scrollTop = container.scrollHeight;
-      }
+      const msg = document.createElement("div")
+      msg.className = `msg ${role}`
 
-      async function startSession() {
-        try {
-          setStatus("Starting session...");
-          const res = await fetch("/session/new", { method: "POST" });
-          const data = await res.json();
-          if (!res.ok)
-            throw new Error(data?.detail?.error || "Failed to start");
+      const bubble = document.createElement("div")
+      bubble.className = "bubble"
 
-          sessionId = data.session_id;
-          document.getElementById("sessionIdDisplay").textContent =
-            `Active Session: ${sessionId}`;
-          messages.innerHTML = "";
-          document.getElementById("riskContainer").innerHTML = "";
+      bubble.textContent = text
 
-          setStatus("Ready");
-          await sendText("");
-        } catch (err) {
-          setStatus("Error");
-          alert(`Session error: ${err.message}`);
-        }
-      }
+      if (role === "assistant" && audio) {
 
-      function showLoading(show, consult = false) {
-        const el = document.getElementById(
-          consult ? "consultLoading" : "loading",
-        );
-        el.classList.toggle("active", show);
-        if (show) setStatus("Processing...");
-        else setStatus("Ready");
-      }
+        const speaker = document.createElement("span")
+        speaker.className = "speaker"
+        speaker.innerHTML = "🔊"
 
-      async function sendText(preFilled = null) {
-        const input = document.getElementById("textInput");
-        const text = preFilled !== null ? preFilled : input.value.trim();
+        speaker.onclick = () => {
 
-        if (!sessionId) {
-          alert("Start a session first.");
-          return;
-        }
-
-        if (preFilled === null && !text) return;
-        if (preFilled === null) input.value = "";
-
-        showLoading(true, false);
-        try {
-          const res = await fetch(`/session/${sessionId}/text`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text }),
-          });
-          const data = await res.json();
-          if (!res.ok)
-            throw new Error(data?.detail?.error || "Text processing failed");
-
-          if (data.transcript) addMessage("user", data.transcript);
-          if (data.response_text) addMessage("assistant", data.response_text);
-
-          if (data.farm_tip) {
-            const tip = document.createElement("div");
-            tip.className = "tip";
-            tip.innerHTML = `<strong>Farm Tip:</strong> ${data.farm_tip}`;
-            messages.appendChild(tip);
+          // Stop previous audio if playing
+          if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
           }
 
-          if (data.crop_health_assessment) {
-            renderHealthBadge(data.crop_health_assessment);
-          }
-        } catch (err) {
-          alert(`Text error: ${err.message}`);
-        } finally {
-          showLoading(false, false);
+          currentAudio = new Audio("data:audio/wav;base64," + audio);
+          currentAudio.play();
+
         }
+
+        bubble.appendChild(speaker)
+
       }
 
-      function renderHealthBadge(assessment) {
-        const c = document.getElementById("riskContainer");
-        c.innerHTML = `
+      msg.appendChild(bubble)
+      container.appendChild(msg)
+
+      container.scrollTop = container.scrollHeight
+    }
+    async function startSession() {
+      try {
+        setStatus("Starting session...");
+        const res = await fetch("/session/new", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data?.detail?.error || "Failed to start");
+
+        sessionId = data.session_id;
+        document.getElementById("sessionIdDisplay").textContent =
+          `Active Session: ${sessionId}`;
+        messages.innerHTML = "";
+        document.getElementById("riskContainer").innerHTML = "";
+
+        setStatus("Ready");
+        await sendText("");
+      } catch (err) {
+        setStatus("Error");
+        alert(`Session error: ${err.message}`);
+      }
+    }
+
+    function showLoading(show, consult = false) {
+      const el = document.getElementById(
+        consult ? "consultLoading" : "loading",
+      );
+      el.classList.toggle("active", show);
+      if (show) setStatus("Processing...");
+      else setStatus("Ready");
+    }
+
+    async function sendText(preFilled = null) {
+      const input = document.getElementById("textInput");
+      const text = preFilled !== null ? preFilled : input.value.trim();
+
+      if (!sessionId) {
+        alert("Start a session first.");
+        return;
+      }
+
+      if (preFilled === null && !text) return;
+      if (preFilled === null) input.value = "";
+
+      showLoading(true, false);
+      try {
+        const res = await fetch(`/session/${sessionId}/text`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data?.detail?.error || "Text processing failed");
+
+        if (data.transcript) addMessage("user", data.transcript);
+        if (data.response_text) addMessage("assistant", data.response_text, false, data.audio_base64);
+
+        if (data.farm_tip) {
+          const tip = document.createElement("div");
+          tip.className = "tip";
+          tip.innerHTML = `<strong>Farm Tip:</strong> ${data.farm_tip}`;
+          messages.appendChild(tip);
+        }
+
+        if (data.crop_health_assessment) {
+          renderHealthBadge(data.crop_health_assessment);
+        }
+      } catch (err) {
+        alert(`Text error: ${err.message}`);
+      } finally {
+        showLoading(false, false);
+      }
+    }
+
+    function renderHealthBadge(assessment) {
+      const c = document.getElementById("riskContainer");
+      c.innerHTML = `
         <div class="risk">
           <div class="level ${assessment.health_level}">${assessment.health_level} Priority</div>
           <div>${assessment.reason || ""}</div>
           <div style="margin-top:6px;"><strong>Action:</strong> ${assessment.recommended_action || "N/A"}</div>
         </div>
       `;
+    }
+
+    async function startRecording() {
+      if (isRecording || !sessionId) return;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        isRecording = true;
+        document.getElementById("micBtn").classList.add("recording");
+
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(audioChunks, { type: "audio/webm" });
+          const wav = await convertToWav(blob);
+          await sendVoice(wav);
+          stream.getTracks().forEach((t) => t.stop());
+        };
+
+        mediaRecorder.start();
+      } catch (err) {
+        alert("Microphone access required for voice input.");
       }
+    }
 
-      async function startRecording() {
-        if (isRecording || !sessionId) return;
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-          });
-          mediaRecorder = new MediaRecorder(stream);
-          audioChunks = [];
-          isRecording = true;
-          document.getElementById("micBtn").classList.add("recording");
+    function stopRecording() {
+      if (!isRecording || !mediaRecorder) return;
+      isRecording = false;
+      document.getElementById("micBtn").classList.remove("recording");
+      mediaRecorder.stop();
+    }
 
-          mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-          mediaRecorder.onstop = async () => {
-            const blob = new Blob(audioChunks, { type: "audio/webm" });
-            const wav = await convertToWav(blob);
-            await sendVoice(wav);
-            stream.getTracks().forEach((t) => t.stop());
-          };
+    async function sendVoice(wavBlob) {
+      showLoading(true, false);
+      try {
+        const fd = new FormData();
+        fd.append("audio", wavBlob, "audio.wav");
 
-          mediaRecorder.start();
-        } catch (err) {
-          alert("Microphone access required for voice input.");
+        const res = await fetch(`/session/${sessionId}/voice`, {
+          method: "POST",
+          body: fd,
+        });
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data?.detail?.error || "Voice processing failed");
+
+        if (data.transcript) addMessage("user", data.transcript);
+        if (data.response_text) addMessage("assistant", data.response_text);
+        if (data.farm_tip) {
+          const tip = document.createElement("div");
+          tip.className = "tip";
+          tip.innerHTML = `<strong>Farm Tip:</strong> ${data.farm_tip}`;
+          messages.appendChild(tip);
         }
+        if (data.crop_health_assessment)
+          renderHealthBadge(data.crop_health_assessment);
+      } catch (err) {
+        alert(`Voice error: ${err.message}`);
+      } finally {
+        showLoading(false, false);
       }
+    }
 
-      function stopRecording() {
-        if (!isRecording || !mediaRecorder) return;
-        isRecording = false;
-        document.getElementById("micBtn").classList.remove("recording");
-        mediaRecorder.stop();
+    async function startConsultRecording() {
+      if (isConsultRecording) return;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        consultRecorder = new MediaRecorder(stream);
+        consultChunks = [];
+        isConsultRecording = true;
+        document.getElementById("consultMicBtn").classList.add("recording");
+
+        consultRecorder.ondataavailable = (e) => consultChunks.push(e.data);
+        consultRecorder.onstop = async () => {
+          const blob = new Blob(consultChunks, { type: "audio/webm" });
+          const wav = await convertToWav(blob);
+          await sendConsultVoice(wav);
+          stream.getTracks().forEach((t) => t.stop());
+        };
+
+        consultRecorder.start();
+      } catch (err) {
+        alert("Microphone access required for consult voice.");
       }
+    }
 
-      async function sendVoice(wavBlob) {
-        showLoading(true, false);
-        try {
-          const fd = new FormData();
-          fd.append("audio", wavBlob, "audio.wav");
+    function stopConsultRecording() {
+      if (!isConsultRecording || !consultRecorder) return;
+      isConsultRecording = false;
+      document.getElementById("consultMicBtn").classList.remove("recording");
+      consultRecorder.stop();
+    }
 
-          const res = await fetch(`/session/${sessionId}/voice`, {
-            method: "POST",
-            body: fd,
-          });
-          const data = await res.json();
-          if (!res.ok)
-            throw new Error(data?.detail?.error || "Voice processing failed");
+    async function sendConsult() {
+      const input = document.getElementById("consultInput");
+      const question = input.value.trim();
+      if (!question) return;
 
-          if (data.transcript) addMessage("user", data.transcript);
-          if (data.response_text) addMessage("assistant", data.response_text);
-          if (data.farm_tip) {
-            const tip = document.createElement("div");
-            tip.className = "tip";
-            tip.innerHTML = `<strong>Farm Tip:</strong> ${data.farm_tip}`;
-            messages.appendChild(tip);
-          }
-          if (data.crop_health_assessment)
-            renderHealthBadge(data.crop_health_assessment);
-        } catch (err) {
-          alert(`Voice error: ${err.message}`);
-        } finally {
-          showLoading(false, false);
-        }
-      }
+      addMessage("user", question, true);
+      input.value = "";
+      showLoading(true, true);
 
-      async function startConsultRecording() {
-        if (isConsultRecording) return;
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-          });
-          consultRecorder = new MediaRecorder(stream);
-          consultChunks = [];
-          isConsultRecording = true;
-          document.getElementById("consultMicBtn").classList.add("recording");
+      try {
+        const body = { question };
+        if (sessionId) body.session_id = sessionId;
 
-          consultRecorder.ondataavailable = (e) => consultChunks.push(e.data);
-          consultRecorder.onstop = async () => {
-            const blob = new Blob(consultChunks, { type: "audio/webm" });
-            const wav = await convertToWav(blob);
-            await sendConsultVoice(wav);
-            stream.getTracks().forEach((t) => t.stop());
-          };
+        const res = await fetch("/consult", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.detail?.error || "Consult failed");
 
-          consultRecorder.start();
-        } catch (err) {
-          alert("Microphone access required for consult voice.");
-        }
-      }
-
-      function stopConsultRecording() {
-        if (!isConsultRecording || !consultRecorder) return;
-        isConsultRecording = false;
-        document.getElementById("consultMicBtn").classList.remove("recording");
-        consultRecorder.stop();
-      }
-
-      async function sendConsult() {
-        const input = document.getElementById("consultInput");
-        const question = input.value.trim();
-        if (!question) return;
-
-        addMessage("user", question, true);
-        input.value = "";
-        showLoading(true, true);
-
-        try {
-          const body = { question };
-          if (sessionId) body.session_id = sessionId;
-
-          const res = await fetch("/consult", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data?.detail?.error || "Consult failed");
-
-          if (data.session_id) {
-            sessionId = data.session_id;
-            document.getElementById("sessionIdDisplay").textContent =
-              `Active Session: ${sessionId}`;
-          }
-
-          addMessage("assistant", data.answer || "No answer available.", true);
-        } catch (err) {
-          addMessage("assistant", `Consult error: ${err.message}`, true);
-        } finally {
-          showLoading(false, true);
-        }
-      }
-
-      async function sendConsultVoice(wavBlob) {
-        showLoading(true, true);
-        try {
-          const fd = new FormData();
-          fd.append("audio", wavBlob, "consult.wav");
-          if (sessionId) fd.append("session_id", sessionId);
-
-          const res = await fetch("/consult/voice", {
-            method: "POST",
-            body: fd,
-          });
-          const data = await res.json();
-          if (!res.ok)
-            throw new Error(data?.detail?.error || "Consult voice failed");
-
-          if (data.session_id) {
-            sessionId = data.session_id;
-            document.getElementById("sessionIdDisplay").textContent =
-              `Active Session: ${sessionId}`;
-          }
-
-          if (data.transcript) addMessage("user", data.transcript, true);
-          if (data.answer) addMessage("assistant", data.answer, true);
-        } catch (err) {
-          addMessage("assistant", `Consult voice error: ${err.message}`, true);
-        } finally {
-          showLoading(false, true);
-        }
-      }
-
-      async function viewSummaryReport() {
-        if (!sessionId) {
-          alert("No active session. Start one first.");
-          return;
+        if (data.session_id) {
+          sessionId = data.session_id;
+          document.getElementById("sessionIdDisplay").textContent =
+            `Active Session: ${sessionId}`;
         }
 
-        try {
-          setStatus("Loading report...");
-          const res = await fetch(`/session/${sessionId}/summary`);
-          const data = await res.json();
-          if (!res.ok)
-            throw new Error(data?.detail?.error || "Failed to fetch summary");
+        addMessage("assistant", data.answer || "No answer available.", true);
+      } catch (err) {
+        addMessage("assistant", `Consult error: ${err.message}`, true);
+      } finally {
+        showLoading(false, true);
+      }
+    }
 
-          const record = data.crop_issue_record || {};
-          const health = data.crop_health_assessment || {};
-          const summary = data.summary || "Summary not generated yet.";
+    async function sendConsultVoice(wavBlob) {
+      showLoading(true, true);
+      try {
+        const fd = new FormData();
+        fd.append("audio", wavBlob, "consult.wav");
+        if (sessionId) fd.append("session_id", sessionId);
 
-          document.getElementById("reportBody").innerHTML = `
+        const res = await fetch("/consult/voice", {
+          method: "POST",
+          body: fd,
+        });
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data?.detail?.error || "Consult voice failed");
+
+        if (data.session_id) {
+          sessionId = data.session_id;
+          document.getElementById("sessionIdDisplay").textContent =
+            `Active Session: ${sessionId}`;
+        }
+
+        if (data.transcript) addMessage("user", data.transcript, true);
+        if (data.answer) addMessage("assistant", data.answer, true, data.audio_base64);
+      } catch (err) {
+        addMessage("assistant", `Consult voice error: ${err.message}`, true);
+      } finally {
+        showLoading(false, true);
+      }
+    }
+
+    async function viewSummaryReport() {
+      if (!sessionId) {
+        alert("No active session. Start one first.");
+        return;
+      }
+
+      try {
+        setStatus("Loading report...");
+        const res = await fetch(`/session/${sessionId}/summary`);
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data?.detail?.error || "Failed to fetch summary");
+
+        const record = data.crop_issue_record || {};
+        const health = data.crop_health_assessment || {};
+        const summary = data.summary || "Summary not generated yet.";
+
+        document.getElementById("reportBody").innerHTML = `
           <div class="report-grid">
             <div class="report-box"><strong>Primary Concern</strong><br>${record.primary_concern || "N/A"}</div>
             <div class="report-box"><strong>Health Level</strong><br>${health.health_level || "N/A"}</div>
@@ -799,112 +827,113 @@
           </div>
         `;
 
-          document.getElementById("reportModal").classList.add("active");
-        } catch (err) {
-          alert(`Report error: ${err.message}`);
-        } finally {
-          setStatus("Ready");
-        }
+        document.getElementById("reportModal").classList.add("active");
+      } catch (err) {
+        alert(`Report error: ${err.message}`);
+      } finally {
+        setStatus("Ready");
+      }
+    }
+
+    function closeModal() {
+      document.getElementById("reportModal").classList.remove("active");
+    }
+
+    async function exportSession() {
+      if (!sessionId) return;
+      try {
+        const res = await fetch(`/session/${sessionId}/export`);
+        const text = await res.text();
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `agriassist_session_${sessionId}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert(`Export error: ${err.message}`);
+      }
+    }
+
+    async function convertToWav(blob) {
+      const audioContext = new (
+        window.AudioContext || window.webkitAudioContext
+      )();
+      const sourceBuffer = await blob.arrayBuffer();
+      const decoded = await audioContext.decodeAudioData(sourceBuffer);
+
+      const sampleRate = 16000;
+      const offline = new OfflineAudioContext(
+        1,
+        decoded.duration * sampleRate,
+        sampleRate,
+      );
+      const src = offline.createBufferSource();
+      src.buffer = decoded;
+      src.connect(offline.destination);
+      src.start();
+      const rendered = await offline.startRendering();
+
+      return encodeWav(rendered.getChannelData(0), sampleRate);
+    }
+
+    function encodeWav(samples, sampleRate) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+
+      function writeString(offset, str) {
+        for (let i = 0; i < str.length; i++)
+          view.setUint8(offset + i, str.charCodeAt(i));
       }
 
-      function closeModal() {
-        document.getElementById("reportModal").classList.remove("active");
+      writeString(0, "RIFF");
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeString(8, "WAVE");
+      writeString(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, "data");
+      view.setUint32(40, samples.length * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++, offset += 2) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
       }
 
-      async function exportSession() {
-        if (!sessionId) return;
-        try {
-          const res = await fetch(`/session/${sessionId}/export`);
-          const text = await res.text();
-          const blob = new Blob([text], { type: "text/plain" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `agriassist_session_${sessionId}.txt`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        } catch (err) {
-          alert(`Export error: ${err.message}`);
-        }
-      }
+      return new Blob([buffer], { type: "audio/wav" });
+    }
 
-      async function convertToWav(blob) {
-        const audioContext = new (
-          window.AudioContext || window.webkitAudioContext
-        )();
-        const sourceBuffer = await blob.arrayBuffer();
-        const decoded = await audioContext.decodeAudioData(sourceBuffer);
+    document.getElementById("textInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendText();
+    });
 
-        const sampleRate = 16000;
-        const offline = new OfflineAudioContext(
-          1,
-          decoded.duration * sampleRate,
-          sampleRate,
-        );
-        const src = offline.createBufferSource();
-        src.buffer = decoded;
-        src.connect(offline.destination);
-        src.start();
-        const rendered = await offline.startRendering();
-
-        return encodeWav(rendered.getChannelData(0), sampleRate);
-      }
-
-      function encodeWav(samples, sampleRate) {
-        const buffer = new ArrayBuffer(44 + samples.length * 2);
-        const view = new DataView(buffer);
-
-        function writeString(offset, str) {
-          for (let i = 0; i < str.length; i++)
-            view.setUint8(offset + i, str.charCodeAt(i));
-        }
-
-        writeString(0, "RIFF");
-        view.setUint32(4, 36 + samples.length * 2, true);
-        writeString(8, "WAVE");
-        writeString(12, "fmt ");
-        view.setUint32(16, 16, true);
-        view.setUint16(20, 1, true);
-        view.setUint16(22, 1, true);
-        view.setUint32(24, sampleRate, true);
-        view.setUint32(28, sampleRate * 2, true);
-        view.setUint16(32, 2, true);
-        view.setUint16(34, 16, true);
-        writeString(36, "data");
-        view.setUint32(40, samples.length * 2, true);
-
-        let offset = 44;
-        for (let i = 0; i < samples.length; i++, offset += 2) {
-          const s = Math.max(-1, Math.min(1, samples[i]));
-          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-        }
-
-        return new Blob([buffer], { type: "audio/wav" });
-      }
-
-      document.getElementById("textInput").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") sendText();
+    document
+      .getElementById("consultInput")
+      .addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendConsult();
       });
 
-      document
-        .getElementById("consultInput")
-        .addEventListener("keydown", (e) => {
-          if (e.key === "Enter") sendConsult();
-        });
+    window.addEventListener("load", () => {
+      addMessage(
+        "assistant",
+        "Welcome to AgriAssist. Click 'New Session' to begin your crop assessment.",
+      );
+      addMessage(
+        "assistant",
+        "Hello! Ask any farm question and I’ll help with practical guidance.",
+        true,
+      );
+    });
+  </script>
+</body>
 
-      window.addEventListener("load", () => {
-        addMessage(
-          "assistant",
-          "Welcome to AgriAssist. Click 'New Session' to begin your crop assessment.",
-        );
-        addMessage(
-          "assistant",
-          "Hello! Ask any farm question and I’ll help with practical guidance.",
-          true,
-        );
-      });
-    </script>
-  </body>
 </html>
