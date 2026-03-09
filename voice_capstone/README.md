@@ -93,7 +93,7 @@ NEXUS_BASE_URL=https://your-nexus-endpoint-url
 ```bash
 uvicorn main:app --reload
 ```
-
+python main
 The API will be available at: `http://localhost:8000`
 The frontend UI will be at: `http://localhost:8000/static/index.html`
 

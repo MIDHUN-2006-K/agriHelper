@@ -531,13 +531,12 @@
 
         speaker.onclick = () => {
 
-          // Stop previous audio if playing
           if (currentAudio) {
             currentAudio.pause();
             currentAudio.currentTime = 0;
           }
 
-          currentAudio = new Audio("data:audio/wav;base64," + audio);
+          currentAudio = new Audio("data:audio/mp3;base64," + audio);
           currentAudio.play();
 
         }
@@ -683,7 +682,7 @@
           throw new Error(data?.detail?.error || "Voice processing failed");
 
         if (data.transcript) addMessage("user", data.transcript);
-        if (data.response_text) addMessage("assistant", data.response_text);
+        if (data.response_text) addMessage("assistant", data.response_text, false, data.audio_base64);
         if (data.farm_tip) {
           const tip = document.createElement("div");
           tip.className = "tip";
@@ -732,38 +731,60 @@
     }
 
     async function sendConsult() {
-      const input = document.getElementById("consultInput");
-      const question = input.value.trim();
-      if (!question) return;
 
-      addMessage("user", question, true);
-      input.value = "";
-      showLoading(true, true);
+      const input = document.getElementById("consultInput")
+      const question = input.value.trim()
+
+      if (!question) return
+
+      addMessage("user", question, true)
+
+      input.value = ""
+
+      showLoading(true, true)
 
       try {
-        const body = { question };
-        if (sessionId) body.session_id = sessionId;
+
+        const body = { question }
+
+        if (sessionId)
+          body.session_id = sessionId
 
         const res = await fetch("/consult", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.detail?.error || "Consult failed");
+          body: JSON.stringify(body)
+        })
+
+        const data = await res.json()
+
+        if (!res.ok)
+          throw new Error(data?.detail?.error || "Consult failed")
 
         if (data.session_id) {
-          sessionId = data.session_id;
+          sessionId = data.session_id
           document.getElementById("sessionIdDisplay").textContent =
-            `Active Session: ${sessionId}`;
+            `Active Session: ${sessionId}`
         }
 
-        addMessage("assistant", data.answer || "No answer available.", true);
+        // ✅ PASS AUDIO HERE
+        addMessage(
+          "assistant",
+          data.answer || "No answer available.",
+          true,
+          data.audio_base64
+        )
+
       } catch (err) {
-        addMessage("assistant", `Consult error: ${err.message}`, true);
+
+        addMessage("assistant", `Consult error: ${err.message}`, true)
+
       } finally {
-        showLoading(false, true);
+
+        showLoading(false, true)
+
       }
+
     }
 
     async function sendConsultVoice(wavBlob) {
