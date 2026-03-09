@@ -1,469 +1,766 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AgriAssist - Farm Voice Assistant</title>
-
-<style>
-:root{
---bg:#f6fbf2;
---panel:#ffffff;
---muted:#5f6f52;
---text:#1f2937;
---brand:#2f7a33;
---brand-soft:#e9f7e9;
---border:#d8e7d6;
---shadow:0 12px 28px rgba(31,41,55,0.08);
-}
-
-*{box-sizing:border-box;}
-
-body{
-margin:0;
-font-family:Inter,Segoe UI,Arial,sans-serif;
-color:var(--text);
-background:
-radial-gradient(circle at 20% 10%,#e8f5e6,transparent 45%),
-radial-gradient(circle at 90% 0%,#edf9ec,transparent 45%),
-var(--bg);
-min-height:100vh;
-padding:24px;
-}
-
-.app{
-max-width:980px;
-margin:0 auto;
-background:var(--panel);
-border:1px solid var(--border);
-border-radius:20px;
-box-shadow:var(--shadow);
-overflow:hidden;
-}
-
-.tabs{
-display:grid;
-grid-template-columns:1fr 1fr;
-border-bottom:1px solid var(--border);
-background:#f8fdf8;
-}
-
-.tab{
-border:none;
-background:transparent;
-padding:14px;
-font-weight:700;
-cursor:pointer;
-color:var(--muted);
-}
-
-.tab.active{
-background:var(--brand-soft);
-color:var(--brand);
-border-bottom:3px solid var(--brand);
-}
-
-.header{
-padding:22px;
-border-bottom:1px solid var(--border);
-background:linear-gradient(135deg,#ffffff 0%,#f3fbf2 100%);
-}
-
-.row{
-display:flex;
-align-items:center;
-justify-content:space-between;
-gap:10px;
-}
-
-h1{margin:0;font-size:28px;}
-
-.subtitle{margin:8px 0 6px;color:var(--muted);}
-
-.session{
-margin-top:10px;
-font-family:monospace;
-font-size:12px;
-}
-
-.actions{display:flex;gap:8px;}
-
-.btn{
-border:1px solid var(--border);
-border-radius:999px;
-padding:8px 12px;
-background:#fff;
-cursor:pointer;
-font-weight:600;
-}
-
-.btn.primary{
-background:var(--brand);
-border-color:var(--brand);
-color:#fff;
-}
-
-.status{
-display:inline-flex;
-align-items:center;
-gap:8px;
-margin-left:8px;
-padding:7px 11px;
-border-radius:999px;
-border:1px solid var(--border);
-background:#f8fdf8;
-font-size:12px;
-font-weight:600;
-}
-
-.dot{
-width:8px;
-height:8px;
-border-radius:50%;
-background:#22c55e;
-}
-
-.view{display:none;padding:20px;}
-.view.active{display:block;}
-
-.messages{
-border:1px solid var(--border);
-border-radius:14px;
-min-height:280px;
-max-height:420px;
-overflow-y:auto;
-padding:12px;
-background:#fcfffb;
-}
-
-.msg{margin:10px 0;display:flex;}
-.msg.user{justify-content:flex-end;}
-
-.bubble{
-max-width:78%;
-padding:10px 12px;
-border-radius:14px;
-line-height:1.4;
-font-size:14px;
-border:1px solid var(--border);
-background:#fff;
-}
-
-.msg.user .bubble{
-background:#edf8ed;
-border-color:#c9e4c6;
-}
-
-.speaker{
-margin-left:8px;
-cursor:pointer;
-opacity:.7;
-}
-
-.speaker:hover{opacity:1;}
-
-.input{
-display:grid;
-grid-template-columns:52px 1fr auto;
-gap:8px;
-margin-top:12px;
-}
-
-.mic{
-border:1px solid var(--border);
-border-radius:12px;
-background:#fff;
-cursor:pointer;
-font-size:20px;
-}
-
-.mic.recording{
-background:#fee2e2;
-border-color:#fecaca;
-}
-
-input[type=text]{
-width:100%;
-border:1px solid var(--border);
-border-radius:12px;
-padding:11px 12px;
-font-size:14px;
-}
-
-.loading{display:none;margin-top:8px;font-size:13px;}
-.loading.active{display:block;}
-
-.modal{
-position:fixed;
-inset:0;
-background:rgba(0,0,0,0.45);
-display:none;
-align-items:center;
-justify-content:center;
-padding:20px;
-}
-
-.modal.active{display:flex;}
-
-.card{
-width:min(900px,100%);
-max-height:85vh;
-overflow:auto;
-background:#fff;
-border-radius:14px;
-border:1px solid var(--border);
-padding:18px;
-}
-</style>
-</head>
-
-<body>
-
-<div class="app">
-
-<div class="tabs">
-<button class="tab active" onclick="switchTab('intake')">AgriAssist Assessment</button>
-<button class="tab" onclick="switchTab('consult')">Farm Consult</button>
-</div>
-
-<div class="header">
-<div class="row">
-<h1 id="title">AgriAssist</h1>
-
-<div class="row">
-<div class="actions">
-<button class="btn" onclick="startSession()">New Session</button>
-<button class="btn" onclick="viewSummaryReport()">Farm Report</button>
-</div>
-
-<div class="status">
-<span class="dot"></span>
-<span id="statusText">Ready</span>
-</div>
-
-</div>
-</div>
-
-<p class="subtitle">Voice-first crop issue intake and farm consultation.</p>
-<p class="session" id="sessionIdDisplay">No active session</p>
-
-</div>
-
-<section id="view-intake" class="view active">
-
-<div id="messages" class="messages"></div>
-
-<div class="loading" id="loading">Processing...</div>
-
-<div class="input">
-<button class="mic" id="micBtn"
-onmousedown="startRecording()"
-onmouseup="stopRecording()">🎙️</button>
-
-<input type="text" id="textInput" placeholder="Describe your crop issue...">
-
-<button class="btn primary" onclick="sendText()">Send</button>
-</div>
-
-</section>
-
-<section id="view-consult" class="view">
-
-<div id="consultMessages" class="messages"></div>
-
-<div class="loading" id="consultLoading">Processing...</div>
-
-<div class="input">
-<button class="mic"
-onmousedown="startConsultRecording()"
-onmouseup="stopConsultRecording()">🎙️</button>
-
-<input type="text" id="consultInput" placeholder="Ask farm question...">
-
-<button class="btn primary" onclick="sendConsult()">Ask</button>
-</div>
-
-</section>
-
-</div>
-
-<script>
-
-let currentAudio=null;
-let sessionId=null;
-let mediaRecorder=null;
-let audioChunks=[];
-let isRecording=false;
-
-const API_BASE=window.location.origin;
-
-function apiUrl(path){
-return API_BASE+path;
-}
-
-function switchTab(tab){
-
-document.getElementById("view-intake").classList.toggle("active",tab==="intake");
-document.getElementById("view-consult").classList.toggle("active",tab==="consult");
-
-}
-
-function addMessage(role,text,consult=false,audio=null){
-
-const container=consult?
-document.getElementById("consultMessages"):
-document.getElementById("messages");
-
-const msg=document.createElement("div");
-msg.className="msg "+role;
-
-const bubble=document.createElement("div");
-bubble.className="bubble";
-bubble.textContent=text;
-
-if(role==="assistant" && audio){
-
-const speaker=document.createElement("span");
-speaker.className="speaker";
-speaker.innerHTML="🔊";
-
-speaker.onclick=()=>{
-
-if(currentAudio){
-currentAudio.pause();
-currentAudio.currentTime=0;
-}
-
-currentAudio=new Audio("data:audio/mp3;base64,"+audio);
-currentAudio.play();
-
-};
-
-bubble.appendChild(speaker);
-
-}
-
-msg.appendChild(bubble);
-container.appendChild(msg);
-
-container.scrollTop=container.scrollHeight;
-
-}
-
-async function startSession(){
-
-const res=await fetch(apiUrl("/session/new"),{method:"POST"});
-const data=await res.json();
-
-sessionId=data.session_id;
-
-document.getElementById("sessionIdDisplay").textContent=
-"Active Session: "+sessionId;
-
-}
-
-async function sendText(){
-
-const input=document.getElementById("textInput");
-const text=input.value.trim();
-
-if(!text)return;
-
-addMessage("user",text);
-input.value="";
-
-const res=await fetch(apiUrl("/session/"+sessionId+"/text"),{
-
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({text})
-
-});
-
-const data=await res.json();
-
-addMessage("assistant",data.response_text,false,data.audio_base64);
-
-}
-
-async function startRecording(){
-
-const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-
-mediaRecorder=new MediaRecorder(stream);
-audioChunks=[];
-
-mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
-
-mediaRecorder.onstop=async()=>{
-
-const blob=new Blob(audioChunks,{type:"audio/webm"});
-
-const fd=new FormData();
-fd.append("audio",blob);
-
-const res=await fetch(apiUrl("/session/"+sessionId+"/voice"),{
-method:"POST",
-body:fd
-});
-
-const data=await res.json();
-
-addMessage("assistant",data.response_text,false,data.audio_base64);
-
-};
-
-mediaRecorder.start();
-isRecording=true;
-
-}
-
-function stopRecording(){
-
-if(!isRecording)return;
-
-mediaRecorder.stop();
-isRecording=false;
-
-}
-
-async function sendConsult(){
-
-const input=document.getElementById("consultInput");
-const q=input.value.trim();
-
-if(!q)return;
-
-addMessage("user",q,true);
-input.value="";
-
-const res=await fetch(apiUrl("/consult"),{
-
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({question:q})
-
-});
-
-const data=await res.json();
-
-addMessage("assistant",data.answer,true,data.audio_base64);
-
-}
-
-window.onload=()=>{
-
-addMessage("assistant","Welcome to AgriAssist. Start a session to begin.");
-
-addMessage(
-"assistant",
-"Hello! Ask farm questions here.",
-true
-);
-
-}
-
-</script>
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgriAssist — Farm Consult</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #f0f5eb;
+        --surface: #ffffff;
+        --brand: #2d6a2e;
+        --brand-light: #e4f3e5;
+        --brand-dark: #1b4d1c;
+        --accent: #4caf50;
+        --text: #1a1a2e;
+        --text-secondary: #5a6a50;
+        --border: #d4e3cf;
+        --user-bubble: #dcf5dd;
+        --user-border: #b4ddb6;
+        --bot-bubble: #ffffff;
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08);
+        --radius: 16px;
+        --radius-sm: 12px;
+        --radius-pill: 999px;
+        --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      body {
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Top bar ── */
+      .topbar {
+        background: var(--brand);
+        color: #fff;
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 2px 12px rgba(45, 106, 46, 0.25);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .topbar .logo {
+        width: 38px;
+        height: 38px;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+
+      .topbar h1 {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .topbar .tagline {
+        font-size: 12px;
+        opacity: 0.8;
+        font-weight: 400;
+      }
+
+      .topbar .status-pill {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 6px 14px;
+        border-radius: var(--radius-pill);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #6ee76e;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* ── Chat area ── */
+      .chat-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        max-width: 820px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 16px;
+      }
+
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 0 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      /* ── Welcome card ── */
+      .welcome {
+        text-align: center;
+        padding: 48px 20px 32px;
+      }
+      .welcome .icon {
+        font-size: 52px;
+        margin-bottom: 12px;
+      }
+      .welcome h2 {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--brand-dark);
+        margin-bottom: 6px;
+      }
+      .welcome p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.5;
+        max-width: 440px;
+        margin: 0 auto;
+      }
+
+      .suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 20px;
+      }
+
+      .suggestion {
+        background: var(--brand-light);
+        color: var(--brand-dark);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-pill);
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+      .suggestion:hover {
+        background: var(--brand);
+        color: #fff;
+        border-color: var(--brand);
+        transform: translateY(-1px);
+      }
+
+      /* ── Messages ── */
+      .msg {
+        display: flex;
+        gap: 8px;
+        max-width: 85%;
+        animation: fadeUp 0.25s ease;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .msg.user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+      }
+
+      .msg-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .msg.bot .msg-avatar {
+        background: var(--brand-light);
+      }
+      .msg.user .msg-avatar {
+        background: #e8e8f0;
+      }
+
+      .msg-body {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .msg-sender {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        padding: 0 4px;
+      }
+      .msg.user .msg-sender {
+        text-align: right;
+      }
+
+      .msg-bubble {
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        font-size: 14px;
+        line-height: 1.55;
+        box-shadow: var(--shadow-sm);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .msg.bot .msg-bubble {
+        background: var(--bot-bubble);
+        border: 1px solid var(--border);
+        border-top-left-radius: 4px;
+      }
+      .msg.user .msg-bubble {
+        background: var(--user-bubble);
+        border: 1px solid var(--user-border);
+        border-top-right-radius: 4px;
+      }
+
+      .msg-bubble .speaker-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border);
+        background: var(--brand-light);
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--brand-dark);
+        transition: var(--transition);
+      }
+      .msg-bubble .speaker-btn:hover {
+        background: var(--brand);
+        color: #fff;
+      }
+
+      /* ── Typing indicator ── */
+      .typing {
+        display: none;
+        align-self: flex-start;
+        padding: 10px 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        border-top-left-radius: 4px;
+        margin-left: 40px;
+        gap: 5px;
+      }
+      .typing.active {
+        display: inline-flex;
+      }
+
+      .typing span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: bounce 0.6s infinite alternate;
+      }
+      .typing span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .typing span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes bounce {
+        to {
+          opacity: 0.3;
+          transform: translateY(-4px);
+        }
+      }
+
+      /* ── Input bar ── */
+      .input-bar {
+        position: sticky;
+        bottom: 0;
+        background: var(--bg);
+        padding: 12px 0 20px;
+      }
+
+      .input-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 6px 6px 6px 16px;
+        box-shadow: var(--shadow-md);
+        transition: border-color var(--transition);
+      }
+      .input-row:focus-within {
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 3px rgba(76, 175, 80, 0.12),
+          var(--shadow-md);
+      }
+
+      .input-row input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 15px;
+        font-family: inherit;
+        background: transparent;
+        color: var(--text);
+        padding: 8px 0;
+      }
+      .input-row input::placeholder {
+        color: #9ca88e;
+      }
+
+      .icon-btn {
+        width: 42px;
+        height: 42px;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        font-size: 18px;
+        transition: var(--transition);
+        flex-shrink: 0;
+      }
+
+      .mic-btn {
+        background: var(--brand-light);
+        color: var(--brand);
+      }
+      .mic-btn:hover {
+        background: #c8e6c9;
+      }
+      .mic-btn.recording {
+        background: #ef5350;
+        color: #fff;
+        animation: pulse-rec 1s infinite;
+      }
+
+      @keyframes pulse-rec {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(239, 83, 80, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(239, 83, 80, 0);
+        }
+      }
+
+      .send-btn {
+        background: var(--brand);
+        color: #fff;
+      }
+      .send-btn:hover {
+        background: var(--brand-dark);
+      }
+      .send-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      /* ── Footer ── */
+      .disclaimer {
+        text-align: center;
+        font-size: 11px;
+        color: var(--text-secondary);
+        padding: 0 16px 14px;
+        opacity: 0.7;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 600px) {
+        .topbar {
+          padding: 10px 14px;
+        }
+        .topbar h1 {
+          font-size: 17px;
+        }
+        .topbar .tagline {
+          display: none;
+        }
+        .chat-wrapper {
+          padding: 0 8px;
+        }
+        .msg {
+          max-width: 92%;
+        }
+        .suggestions {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="logo">🌾</div>
+      <div>
+        <h1>AgriAssist</h1>
+        <span class="tagline">Your AI-powered Farm Consultant</span>
+      </div>
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span id="statusText">Online</span>
+      </div>
+    </header>
+
+    <!-- Chat -->
+    <div class="chat-wrapper">
+      <div class="chat-messages" id="chatMessages">
+        <!-- Welcome card -->
+        <div class="welcome" id="welcomeCard">
+          <div class="icon">🧑‍🌾</div>
+          <h2>Welcome to Farm Consult</h2>
+          <p>
+            Ask anything about crops, soil, pest control, irrigation,
+            fertilizers, or market prices. I'm here to help!
+          </p>
+          <div class="suggestions">
+            <button class="suggestion" onclick="askSuggestion(this)">
+              How to treat leaf curl in tomato?
+            </button>
+            <button class="suggestion" onclick="askSuggestion(this)">
+              Best fertilizer for wheat in winter
+            </button>
+            <button class="suggestion" onclick="askSuggestion(this)">
+              When to irrigate rice paddy?
+            </button>
+            <button class="suggestion" onclick="askSuggestion(this)">
+              Organic pest control for cotton
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing indicator -->
+      <div class="typing" id="typing">
+        <span></span><span></span><span></span>
+      </div>
+
+      <!-- Input -->
+      <div class="input-bar">
+        <div class="input-row">
+          <input
+            type="text"
+            id="questionInput"
+            placeholder="Ask a farming question…"
+            autocomplete="off"
+          />
+          <button
+            class="icon-btn mic-btn"
+            id="micBtn"
+            onmousedown="startVoice()"
+            onmouseup="stopVoice()"
+            ontouchstart="startVoice()"
+            ontouchend="stopVoice()"
+            title="Hold to speak"
+          >
+            🎙️
+          </button>
+          <button
+            class="icon-btn send-btn"
+            id="sendBtn"
+            onclick="sendQuestion()"
+            title="Send"
+          >
+            ➤
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <p class="disclaimer">
+      General guidance only — verify critical decisions with local agronomists.
+    </p>
+
+    <script>
+      /* ── State ── */
+      let currentAudio = null;
+      let sessionId = null;
+      let mediaRecorder = null;
+      let audioChunks = [];
+      let isRecording = false;
+
+      const API_BASE = (() => {
+        const q = new URLSearchParams(window.location.search).get("api");
+        if (q) return q.replace(/\/$/, "");
+        if (window.location.protocol === "file:")
+          return "http://127.0.0.1:8000";
+        return window.location.origin;
+      })();
+
+      function api(path) {
+        return API_BASE + path;
+      }
+
+      const chatEl = document.getElementById("chatMessages");
+      const inputEl = document.getElementById("questionInput");
+      const micBtn = document.getElementById("micBtn");
+      const sendBtn = document.getElementById("sendBtn");
+      const typingEl = document.getElementById("typing");
+      const welcomeEl = document.getElementById("welcomeCard");
+
+      /* ── Helpers ── */
+      function setStatus(t) {
+        document.getElementById("statusText").textContent = t;
+      }
+
+      function hideWelcome() {
+        if (welcomeEl) welcomeEl.style.display = "none";
+      }
+
+      function showTyping(on) {
+        typingEl.classList.toggle("active", on);
+        setStatus(on ? "Thinking…" : "Online");
+      }
+
+      function scrollBottom() {
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
+
+      function playAudio(b64) {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+        }
+        currentAudio = new Audio("data:audio/mp3;base64," + b64);
+        currentAudio.play();
+      }
+
+      /* ── Render message ── */
+      function addMsg(role, text, audioB64) {
+        hideWelcome();
+        const isUser = role === "user";
+        const wrapper = document.createElement("div");
+        wrapper.className = "msg " + (isUser ? "user" : "bot");
+
+        const avatar = document.createElement("div");
+        avatar.className = "msg-avatar";
+        avatar.textContent = isUser ? "👤" : "🌾";
+
+        const body = document.createElement("div");
+        body.className = "msg-body";
+
+        const sender = document.createElement("div");
+        sender.className = "msg-sender";
+        sender.textContent = isUser ? "You" : "AgriAssist";
+
+        const bubble = document.createElement("div");
+        bubble.className = "msg-bubble";
+        bubble.textContent = text;
+
+        if (!isUser && audioB64) {
+          const btn = document.createElement("button");
+          btn.className = "speaker-btn";
+          btn.innerHTML = "🔊 Listen";
+          btn.onclick = () => playAudio(audioB64);
+          bubble.appendChild(btn);
+        }
+
+        body.appendChild(sender);
+        body.appendChild(bubble);
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(body);
+        chatEl.appendChild(wrapper);
+        scrollBottom();
+      }
+
+      /* ── Send text question ── */
+      async function sendQuestion(prefilled) {
+        const text = (prefilled || inputEl.value).trim();
+        if (!text) return;
+
+        inputEl.value = "";
+        addMsg("user", text);
+        showTyping(true);
+
+        try {
+          const payload = { question: text };
+          if (sessionId) payload.session_id = sessionId;
+
+          const res = await fetch(api("/consult"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.detail?.error || "Request failed");
+
+          if (data.session_id) sessionId = data.session_id;
+          addMsg(
+            "bot",
+            data.answer || "Sorry, I couldn't generate an answer.",
+            data.audio_base64,
+          );
+        } catch (err) {
+          addMsg("bot", "Error: " + err.message);
+        } finally {
+          showTyping(false);
+        }
+      }
+
+      /* ── Suggestion chips ── */
+      function askSuggestion(el) {
+        sendQuestion(el.textContent);
+      }
+
+      /* ── Voice input ── */
+      async function startVoice() {
+        if (isRecording) return;
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          isRecording = true;
+          micBtn.classList.add("recording");
+
+          mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+          mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach((t) => t.stop());
+            const blob = new Blob(audioChunks, { type: "audio/webm" });
+            const wav = await toWav(blob);
+            await sendVoice(wav);
+          };
+          mediaRecorder.start();
+        } catch (e) {
+          alert("Microphone access is required for voice input.");
+        }
+      }
+
+      function stopVoice() {
+        if (!isRecording || !mediaRecorder) return;
+        isRecording = false;
+        micBtn.classList.remove("recording");
+        mediaRecorder.stop();
+      }
+
+      async function sendVoice(wavBlob) {
+        showTyping(true);
+        try {
+          const fd = new FormData();
+          fd.append("audio", wavBlob, "consult.wav");
+          if (sessionId) fd.append("session_id", sessionId);
+
+          const res = await fetch(api("/consult/voice"), {
+            method: "POST",
+            body: fd,
+          });
+          const data = await res.json();
+          if (!res.ok)
+            throw new Error(data?.detail?.error || "Voice request failed");
+
+          if (data.session_id) sessionId = data.session_id;
+          if (data.transcript) addMsg("user", data.transcript);
+          addMsg(
+            "bot",
+            data.answer || "Sorry, I couldn't process the audio.",
+            data.audio_base64,
+          );
+        } catch (err) {
+          addMsg("bot", "Voice error: " + err.message);
+        } finally {
+          showTyping(false);
+        }
+      }
+
+      /* ── WAV encoder ── */
+      async function toWav(blob) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+        const sr = 16000;
+        const off = new OfflineAudioContext(1, buf.duration * sr, sr);
+        const src = off.createBufferSource();
+        src.buffer = buf;
+        src.connect(off.destination);
+        src.start();
+        const rendered = await off.startRendering();
+        return encodeWav(rendered.getChannelData(0), sr);
+      }
+
+      function encodeWav(samples, sr) {
+        const buf = new ArrayBuffer(44 + samples.length * 2);
+        const v = new DataView(buf);
+        const w = (o, s) => {
+          for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i));
+        };
+        w(0, "RIFF");
+        v.setUint32(4, 36 + samples.length * 2, true);
+        w(8, "WAVE");
+        w(12, "fmt ");
+        v.setUint32(16, 16, true);
+        v.setUint16(20, 1, true);
+        v.setUint16(22, 1, true);
+        v.setUint32(24, sr, true);
+        v.setUint32(28, sr * 2, true);
+        v.setUint16(32, 2, true);
+        v.setUint16(34, 16, true);
+        w(36, "data");
+        v.setUint32(40, samples.length * 2, true);
+        let off = 44;
+        for (let i = 0; i < samples.length; i++, off += 2) {
+          const s = Math.max(-1, Math.min(1, samples[i]));
+          v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        }
+        return new Blob([buf], { type: "audio/wav" });
+      }
+
+      /* ── Keyboard ── */
+      inputEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendQuestion();
+      });
+    </script>
+  </body>
 </html>
